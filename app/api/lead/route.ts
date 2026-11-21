@@ -1,13 +1,6 @@
 import type { NextRequest } from "next/server";
-import { CONTACT_CONSENT_TEXT, MARKETING_CONSENT_TEXT } from "@/lib/consent";
 
-// ── יעד 1: Supabase (טבלת leads) ────────────────────────────────────────────
-// ה-URL אינו סוד. המפתח כן — יש להגדיר SUPABASE_SERVICE_ROLE_KEY במשתני הסביבה
-// של Vercel (Project → Settings → Environment Variables). service_role עוקף RLS.
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "https://zkcqsaqlngvxwrjuxyit.supabase.co";
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_KEY ?? "";
-
-// ── יעד 2 (ראשי): Google Sheet בדרייב + מייל התראה, דרך Apps Script Web App ──
+// ── יעד הלידים: Google Sheet בדרייב של FLY + מייל התראה, דרך Apps Script Web App ──
 // הקוד של הסקריפט: google-apps-script/Code.gs. כתובת ה-/exec של הפריסה (הרשאה: Anyone).
 // SHEETS_SECRET חייב להיות זהה ל-LEAD_SECRET ב-Script Properties של הסקריפט.
 const SHEETS_WEBAPP_URL = process.env.SHEETS_WEBAPP_URL ?? "";
@@ -49,39 +42,6 @@ type Payload = {
 function clientIp(req: NextRequest): string {
   const fwd = req.headers.get("x-forwarded-for");
   return fwd?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
-}
-
-async function insertSupabase(row: Record<string, unknown>) {
-  return fetch(`${SUPABASE_URL}/rest/v1/leads`, {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: "return=minimal",
-    },
-    body: JSON.stringify(row),
-  });
-}
-
-async function sendToSupabase(rich: Record<string, unknown>, minimal: Record<string, unknown>) {
-  if (!SUPABASE_KEY) return { ok: false, skipped: true, error: "no SUPABASE key configured" };
-  try {
-    let res = await insertSupabase(rich);
-    if (!res.ok) {
-      const body = await res.text();
-      // עמודה חסרה / schema cache — ננסה שוב עם המבנה המינימלי המוכר
-      if (/PGRST204|42703|does not exist|Could not find the/i.test(body)) {
-        res = await insertSupabase(minimal);
-        if (!res.ok) return { ok: false, error: `supabase ${res.status}: ${await res.text()}` };
-        return { ok: true, degraded: true };
-      }
-      return { ok: false, error: `supabase ${res.status}: ${body}` };
-    }
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, error: `supabase fetch failed: ${(e as Error).message}` };
-  }
 }
 
 async function sendToSheet(fields: Record<string, string>) {
@@ -167,37 +127,6 @@ export async function POST(request: NextRequest) {
   const lastUtmMedium = clip(data.lastUtmMedium, 200);
   const lastUtmCampaign = clip(data.lastUtmCampaign, 200);
 
-  // מבנה עשיר — יעבוד אם הוספתם את העמודות לטבלה. אחרת נופלים אוטומטית למינימלי.
-  const richRow = {
-    name,
-    phone,
-    email: email || null,
-    page,
-    landing_page: landingPage || null,
-    referrer: referrer || null,
-    utm_source: utmSource || null,
-    utm_medium: utmMedium || null,
-    utm_campaign: utmCampaign || null,
-    utm_term: utmTerm || null,
-    utm_content: utmContent || null,
-    gclid: gclid || null,
-    gbraid: gbraid || null,
-    wbraid: wbraid || null,
-    fbclid: fbclid || null,
-    msclkid: msclkid || null,
-    ttclid: ttclid || null,
-    last_utm_source: lastUtmSource || null,
-    last_utm_medium: lastUtmMedium || null,
-    last_utm_campaign: lastUtmCampaign || null,
-    marketing_consent: marketingConsent,
-    marketing_consent_text: marketingConsent ? MARKETING_CONSENT_TEXT : null,
-    consent_text: CONTACT_CONSENT_TEXT,
-    consent_at: consentAt,
-    ip,
-    user_agent: userAgent,
-  };
-  const minimalRow = { name, phone, email: email || null, page };
-
   const sheetFields: Record<string, string> = {
     name,
     phone,
@@ -225,26 +154,15 @@ export async function POST(request: NextRequest) {
     user_agent: userAgent,
   };
 
-  const [supa, sheet] = await Promise.all([
-    sendToSupabase(richRow, minimalRow),
-    sendToSheet(sheetFields),
-  ]);
+  const sheet = await sendToSheet(sheetFields);
 
-  const anyStored = supa.ok || sheet.ok;
-  const allConfigured = !supa.skipped || !sheet.skipped;
-
-  if (!anyStored) {
-    // אף יעד לא קלט את הליד — מחזירים שגיאה אמיתית כדי שהטופס יציג הודעת כשל.
-    console.error("[lead] not stored", { supa, sheet, configured: allConfigured });
+  if (!sheet.ok) {
+    // הליד לא נשמר — מחזירים שגיאה אמיתית כדי שהטופס יציג הודעת כשל.
+    console.error("[lead] not stored", sheet);
     return Response.json(
-      { ok: false, error: allConfigured ? "storage_failed" : "backend_not_configured" },
+      { ok: false, error: sheet.skipped ? "backend_not_configured" : "storage_failed" },
       { status: 502 },
     );
-  }
-
-  if (!supa.ok || !sheet.ok) {
-    // יעד אחד הצליח, השני לא — הליד לא אבד. לוג לתחקור.
-    console.warn("[lead] partial delivery", { supa, sheet });
   }
 
   return Response.json({ ok: true });
