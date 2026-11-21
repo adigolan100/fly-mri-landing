@@ -22,7 +22,7 @@ const manrope = Manrope({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const siteUrl = "https://flymri.com";
+const siteUrl = "https://lp.flymri.com";
 const ogTitle = "FlyMRI | Know more. Live better.";
 const ogDescription =
   "A clearer picture of your health, with a simple, carefully coordinated MRI experience abroad.";
