@@ -1,5 +1,6 @@
 /**
- * FLY MRI — קליטת לידים מהאתר ל-Google Sheet + מייל התראה על כל ליד.
+ * FLY MRI — קליטת לידים מהאתר ל-Google Sheet.
+ * (מייל ההתראה על כל ליד נשלח מהאתר דרך Resend, לא מכאן.)
  *
  * הקוד הזה רץ בחשבון ה-Google שלך (Apps Script), לא ב-Vercel.
  * כל שינוי כאן — יש להדביק מחדש ב-Apps Script ולפרוס גרסה חדשה
@@ -11,8 +12,6 @@
  *   SPREADSHEET_ID — נוצר אוטומטית בהרצת setup().
  *   LEAD_SECRET   — חובה. נוצר אוטומטית בהרצת setup() (מודפס ב-Execution log).
  *                   אותו ערך בדיוק צריך להיות SHEETS_SECRET באתר (.env.local / Vercel).
- *   NOTIFY_EMAILS — אופציונלי. נמענים נוספים למייל, מופרדים בפסיק.
- *                   ברירת מחדל: בעל החשבון שפורס את הסקריפט.
  */
 
 // שם הגיליון שנוצר בדרייב בהרצת setup(). ה-ID שלו נשמר ב-Script Property בשם SPREADSHEET_ID.
@@ -83,14 +82,8 @@ function doPost(e) {
     lock.releaseLock();
   }
 
-  // המייל נשלח אחרי שהליד כבר נשמר — כשל במייל לא מאבד ליד.
-  try {
-    sendNotification_(p, sheet.getParent().getUrl());
-  } catch (err) {
-    console.error('mail failed: ' + err);
-    return json_({ ok: true, mail: false });
-  }
-  return json_({ ok: true, mail: true });
+  // מייל ההתראה נשלח מהאתר עצמו (Resend) — ראו app/api/lead/route.ts.
+  return json_({ ok: true });
 }
 
 function doGet() {
@@ -111,53 +104,6 @@ function safeCell_(v) {
   const s = String(v == null ? '' : v).slice(0, 1000);
   if (/^[=+\-@]/.test(s) || /^0\d/.test(s)) return "'" + s;
   return s;
-}
-
-function sendNotification_(p, sheetUrl) {
-  const owner = Session.getEffectiveUser().getEmail();
-  const extra = (PropertiesService.getScriptProperties().getProperty('NOTIFY_EMAILS') || '')
-    .split(',').map(function (x) { return x.trim(); }).filter(String);
-  const to = [owner].concat(extra).filter(String).join(',');
-  if (!to) return;
-
-  const name = p.name || '(ללא שם)';
-  const phone = p.phone || '';
-  const intlPhone = phone.replace(/\D/g, '').replace(/^0/, '972');
-  const source = [p.utm_source, p.utm_medium, p.utm_campaign].filter(String).join(' / ') || 'כניסה ישירה / לא ידוע';
-
-  const rows = [
-    ['שם', esc_(name)],
-    ['טלפון', '<a href="tel:' + esc_(phone) + '">' + esc_(phone) + '</a>' +
-      (intlPhone ? ' &nbsp;·&nbsp; <a href="https://wa.me/' + intlPhone + '">וואטסאפ</a>' : '')],
-    ['אימייל', p.email ? '<a href="mailto:' + esc_(p.email) + '">' + esc_(p.email) + '</a>' : '—'],
-    ['מקור', esc_(source)],
-    ['הסכמה לדיוור', esc_(p.marketing_consent || '—')],
-    ['עמוד', esc_(p.page || '—')],
-  ].map(function (r) {
-    return '<tr><td style="padding:6px 12px;color:#666;white-space:nowrap">' + r[0] +
-      '</td><td style="padding:6px 12px;font-weight:600">' + r[1] + '</td></tr>';
-  }).join('');
-
-  const html =
-    '<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px">' +
-    '<h2 style="margin:0 0 12px">ליד חדש מהאתר 🎯</h2>' +
-    '<table style="border-collapse:collapse">' + rows + '</table>' +
-    '<p style="margin-top:16px"><a href="' + sheetUrl + '">פתיחת גיליון הלידים</a></p>' +
-    '</div>';
-
-  MailApp.sendEmail({
-    to: to,
-    subject: 'ליד חדש מהאתר: ' + name + (phone ? ' · ' + phone : ''),
-    htmlBody: html,
-    replyTo: p.email || undefined,
-    name: 'FLY MRI — לידים',
-  });
-}
-
-function esc_(s) {
-  return String(s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-  });
 }
 
 function json_(obj) {
@@ -190,7 +136,6 @@ function setup() {
     props.setProperty('LEAD_SECRET', secret);
   }
 
-  MailApp.getRemainingDailyQuota(); // כדי שאישור ההרשאות יכלול גם שליחת מייל
   console.log('SHEET_URL=' + sheet.getParent().getUrl());
   console.log('LEAD_SECRET=' + secret);
 }
