@@ -7,9 +7,11 @@ import { CONTACT_CONSENT_TEXT, MARKETING_CONSENT_TEXT } from "@/lib/consent";
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "https://zkcqsaqlngvxwrjuxyit.supabase.co";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_KEY ?? "";
 
-// ── יעד 2: Google Sheet דרך Apps Script Web App ────────────────────────────
-// אופציונלי. כתובת ה-/exec של פריסת ה-Web App (הרשאה: Anyone).
+// ── יעד 2 (ראשי): Google Sheet בדרייב + מייל התראה, דרך Apps Script Web App ──
+// הקוד של הסקריפט: google-apps-script/Code.gs. כתובת ה-/exec של הפריסה (הרשאה: Anyone).
+// SHEETS_SECRET חייב להיות זהה ל-LEAD_SECRET ב-Script Properties של הסקריפט.
 const SHEETS_WEBAPP_URL = process.env.SHEETS_WEBAPP_URL ?? "";
+const SHEETS_SECRET = process.env.SHEETS_SECRET ?? "";
 
 const PHONE_RE = /^0\d{1,2}-?\d{7}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -88,10 +90,21 @@ async function sendToSheet(fields: Record<string, string>) {
     const res = await fetch(SHEETS_WEBAPP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(fields).toString(),
+      body: new URLSearchParams({ ...fields, token: SHEETS_SECRET }).toString(),
       redirect: "follow",
     });
-    return { ok: res.ok, error: res.ok ? undefined : `sheet ${res.status}` };
+    if (!res.ok) return { ok: false, error: `sheet ${res.status}` };
+    // Apps Script מחזיר 200 גם בשגיאה — בודקים את גוף התשובה.
+    const text = await res.text();
+    let body: { ok?: boolean; error?: string; mail?: boolean } = {};
+    try {
+      body = JSON.parse(text);
+    } catch {
+      return { ok: false, error: `sheet non-json: ${text.slice(0, 200)}` };
+    }
+    if (!body.ok) return { ok: false, error: `sheet: ${body.error ?? "unknown"}` };
+    if (body.mail === false) console.warn("[lead] stored in sheet but email failed");
+    return { ok: true };
   } catch (e) {
     return { ok: false, error: `sheet fetch failed: ${(e as Error).message}` };
   }
