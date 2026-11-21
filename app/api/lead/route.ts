@@ -6,6 +6,16 @@ import type { NextRequest } from "next/server";
 const SHEETS_WEBAPP_URL = process.env.SHEETS_WEBAPP_URL ?? "";
 const SHEETS_SECRET = process.env.SHEETS_SECRET ?? "";
 
+// ── מייל התראה על כל ליד — Resend (דומיין שולח מאומת: updates.flymri.com) ──
+// נשלח מהשרת אחרי שהליד נשמר בגיליון. כשל במייל לא מכשיל את הליד.
+const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
+const LEAD_NOTIFY_TO = (process.env.LEAD_NOTIFY_TO ?? "info@flymri.com")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const LEAD_NOTIFY_FROM = process.env.LEAD_NOTIFY_FROM ?? "FLY MRI לידים <leads@updates.flymri.com>";
+const LEADS_SHEET_URL = process.env.LEADS_SHEET_URL ?? "";
+
 const PHONE_RE = /^0\d{1,2}-?\d{7}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -67,6 +77,63 @@ async function sendToSheet(fields: Record<string, string>) {
     return { ok: true };
   } catch (e) {
     return { ok: false, error: `sheet fetch failed: ${(e as Error).message}` };
+  }
+}
+
+function esc(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  );
+}
+
+async function sendLeadEmail(f: Record<string, string>) {
+  if (!RESEND_API_KEY) return { ok: false, skipped: true };
+  const intlPhone = f.phone.replace(/\D/g, "").replace(/^0/, "972");
+  const source =
+    [f.utm_source, f.utm_medium, f.utm_campaign].filter(Boolean).join(" / ") || "כניסה ישירה / לא ידוע";
+  const rows: [string, string][] = [
+    ["שם", esc(f.name)],
+    [
+      "טלפון",
+      `<a href="tel:${esc(f.phone)}">${esc(f.phone)}</a>` +
+        (intlPhone ? ` &nbsp;·&nbsp; <a href="https://wa.me/${intlPhone}">וואטסאפ</a>` : ""),
+    ],
+    ["אימייל", f.email ? `<a href="mailto:${esc(f.email)}">${esc(f.email)}</a>` : "—"],
+    ["מקור", esc(source)],
+    ["הסכמה לדיוור", esc(f.marketing_consent || "—")],
+    ["עמוד", esc(f.page || "—")],
+  ];
+  const html =
+    `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px">` +
+    `<h2 style="margin:0 0 12px">ליד חדש מהאתר</h2>` +
+    `<table style="border-collapse:collapse">` +
+    rows
+      .map(
+        ([k, v]) =>
+          `<tr><td style="padding:6px 12px;color:#666;white-space:nowrap">${k}</td>` +
+          `<td style="padding:6px 12px;font-weight:600">${v}</td></tr>`,
+      )
+      .join("") +
+    `</table>` +
+    (LEADS_SHEET_URL ? `<p style="margin-top:16px"><a href="${esc(LEADS_SHEET_URL)}">פתיחת גיליון הלידים</a></p>` : "") +
+    `</div>`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: LEAD_NOTIFY_FROM,
+        to: LEAD_NOTIFY_TO,
+        reply_to: f.email || undefined,
+        subject: `ליד חדש מהאתר: ${f.name}${f.phone ? ` · ${f.phone}` : ""}`,
+        html,
+      }),
+    });
+    if (!res.ok) return { ok: false, error: `resend ${res.status}: ${(await res.text()).slice(0, 300)}` };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: `resend fetch failed: ${(e as Error).message}` };
   }
 }
 
@@ -164,6 +231,10 @@ export async function POST(request: NextRequest) {
       { status: 502 },
     );
   }
+
+  // הליד כבר שמור — המייל הוא תוספת. כשל נרשם בלוג בלבד.
+  const mail = await sendLeadEmail(sheetFields);
+  if (!mail.ok) console.warn("[lead] stored, but notification email not sent", mail);
 
   return Response.json({ ok: true });
 }
