@@ -15,6 +15,8 @@ const LEAD_NOTIFY_TO = (process.env.LEAD_NOTIFY_TO ?? "info@flymri.com")
   .filter(Boolean);
 const LEAD_NOTIFY_FROM = process.env.LEAD_NOTIFY_FROM ?? "FLY MRI לידים <leads@updates.flymri.com>";
 const LEADS_SHEET_URL = process.env.LEADS_SHEET_URL ?? "";
+// מקור הליד בכותרת המייל — מבדיל בין האתר הראשי לדף הנחיתה.
+const SOURCE_LABEL = "מדף הנחיתה";
 
 const PHONE_RE = /^0\d{1,2}-?\d{7}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -105,7 +107,7 @@ async function sendLeadEmail(f: Record<string, string>) {
   ];
   const html =
     `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px">` +
-    `<h2 style="margin:0 0 12px">ליד חדש מהאתר</h2>` +
+    `<h2 style="margin:0 0 12px">ליד חדש ${SOURCE_LABEL}</h2>` +
     `<table style="border-collapse:collapse">` +
     rows
       .map(
@@ -126,7 +128,7 @@ async function sendLeadEmail(f: Record<string, string>) {
         from: LEAD_NOTIFY_FROM,
         to: LEAD_NOTIFY_TO,
         reply_to: f.email || undefined,
-        subject: `ליד חדש מהאתר: ${f.name}${f.phone ? ` · ${f.phone}` : ""}`,
+        subject: `ליד חדש ${SOURCE_LABEL}: ${f.name}${f.phone ? ` · ${f.phone}` : ""}`,
         html,
       }),
     });
