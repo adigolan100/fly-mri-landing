@@ -111,8 +111,8 @@ export default function CTAForm() {
               {c.successKicker}
             </p>
             <h2 className="font-heading font-semibold text-2xl sm:text-3xl mb-3 leading-snug">
+              {name.split(" ")[0] ? `${name.split(" ")[0]}, ` : ""}
               {c.successHeadline}
-              {name.split(" ")[0] ? `, ${name.split(" ")[0]}` : ""}
             </h2>
             <p className="text-lg opacity-90 leading-relaxed">{c.successBody}</p>
           </div>
