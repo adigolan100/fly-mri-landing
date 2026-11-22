@@ -104,6 +104,19 @@ export default function CTAForm() {
       <FocusCircle size={200} bottom="-5%" right="-3%" />
       <FocusCircle size={90} top="12%" right="12%" className="hidden sm:block" />
       <Container className="relative max-w-lg">
+        {submitted ? (
+          // אחרי שליחה: הכותרת "השאירו פרטים" כבר לא רלוונטית — מציגים תודה במקומה.
+          <div role="status" className="text-center">
+            <p className="font-latin text-sm font-semibold mb-3" style={{ color: "#DCEEFF" }}>
+              {c.successKicker}
+            </p>
+            <h2 className="font-heading font-semibold text-2xl sm:text-3xl mb-3 leading-snug">
+              {c.successHeadline}
+              {name.split(" ")[0] ? `, ${name.split(" ")[0]}` : ""}
+            </h2>
+            <p className="text-lg opacity-90 leading-relaxed">{c.successBody}</p>
+          </div>
+        ) : (
         <Reveal>
           <p className="font-latin text-sm font-semibold text-center mb-3" style={{ color: "#DCEEFF" }}>
             {c.headline}
@@ -112,16 +125,10 @@ export default function CTAForm() {
             {c.formIntro}
           </h2>
         </Reveal>
+        )}
 
         <Reveal>
-          {submitted ? (
-            <div role="status" className="mt-8 rounded-2xl bg-white/10 border border-white/20 p-8 text-center">
-              <p className="text-xl font-semibold mb-2">תודה, {name.split(" ")[0] || ""}!</p>
-              <p className="opacity-90 leading-relaxed">
-                קיבלנו את הפרטים. ניצור קשר בקרוב לתיאום שיחת הייעוץ.
-              </p>
-            </div>
-          ) : (
+          {submitted ? null : (
             <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-4">
               {submitError && (
                 <p
