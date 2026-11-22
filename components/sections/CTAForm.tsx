@@ -107,9 +107,6 @@ export default function CTAForm() {
         {submitted ? (
           // אחרי שליחה: הכותרת "השאירו פרטים" כבר לא רלוונטית — מציגים תודה במקומה.
           <div role="status" className="text-center">
-            <p className="font-latin text-sm font-semibold mb-3" style={{ color: "#DCEEFF" }}>
-              {c.successKicker}
-            </p>
             <h2 className="font-heading font-semibold text-2xl sm:text-3xl mb-3 leading-snug">
               {name.split(" ")[0] ? `${name.split(" ")[0]}, ` : ""}
               {c.successHeadline}
