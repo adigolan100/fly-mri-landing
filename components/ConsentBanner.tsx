@@ -10,6 +10,7 @@ export default function ConsentBanner() {
   const [open, setOpen] = useState(false);
   const reopenedRef = useRef(false);
   const acceptRef = useRef<HTMLButtonElement>(null);
+  const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // קריאה חד-פעמית מ-localStorage בטעינה כדי להחליט אם להציג את הבאנר.
@@ -31,10 +32,33 @@ export default function ConsentBanner() {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      // Escape שנועד לחלון אחר (למשל חלון המגזין) לא סוגר את באנר העוגיות.
+      if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]")) setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  // כל עוד הבאנר פתוח הוא מכסה את תחתית המסך — מוסיפים scroll-padding-bottom
+  // בגובהו, כדי שמעבר מקלדת (Tab) לא ינחת על כפתור שמוסתר מתחתיו.
+  useEffect(() => {
+    const el = bannerRef.current;
+    if (!open || !el) return;
+    const html = document.documentElement;
+    const sync = () => {
+      const h = el.getBoundingClientRect().height;
+      html.style.scrollPaddingBottom = `${h}px`;
+      // מקום בסוף העמוד, כדי שהבאנר לא יכסה את הקישורים האחרונים בפוטר.
+      document.body.style.paddingBottom = `${h}px`;
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      html.style.scrollPaddingBottom = "";
+      document.body.style.paddingBottom = "";
+    };
   }, [open]);
 
   if (!open) return null;
@@ -46,6 +70,7 @@ export default function ConsentBanner() {
 
   return (
     <div
+      ref={bannerRef}
       role="dialog"
       aria-labelledby="consent-title"
       aria-describedby="consent-desc"

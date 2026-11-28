@@ -29,6 +29,30 @@
 html {
   scroll-behavior: smooth;
 }
+/* Focus/anchor targets inside the page (e.g. a form field after a failed
+   submit) stop below the sticky header. Deliberately scroll-margin on the
+   targets, not scroll-padding on <html>: a page-wide padding taller than the
+   header makes the browser "reveal" header controls on focus and jump the
+   page. --header-h is measured by ScrollMotion; fallback matches the header. */
+:where(#main-content, footer) :is(a, button, input, select, textarea, summary, [tabindex]) {
+  scroll-margin-top: calc(var(--header-h, 4rem) + 0.75rem);
+}
+/* Form fields: leave room for the label above the field too. */
+#consult :is(input, select, textarea) {
+  scroll-margin-top: calc(var(--header-h, 4rem) + 2.5rem);
+}
+/* Lenis drives scrolling itself; native smooth scrolling would fight it. */
+html.lenis {
+  scroll-behavior: auto;
+}
+/* Stacked chapters (ScrollMotion): every chapter that slides over the one
+   before it gets a curved top edge — radius only, no negative margin, so
+   sections not designed to overlap keep their spacing. JS-only. */
+#main-content > section[data-stack-panel]:not(:first-child):not(.chapter-curve) {
+  border-start-start-radius: 50% clamp(28px, 5vw, 68px);
+  border-start-end-radius: 50% clamp(28px, 5vw, 68px);
+  overflow: clip;
+}
 
 body {
   background: var(--bg);
@@ -174,4 +198,27 @@ textarea:focus-visible,
   border-radius: 4px;
   padding: 0.1rem 0.4rem;
   font-size: 0.9em;
+}
+
+/* חלון המגזין — נכנס בעדינות (בלי השהיה), והעמוד נשאר נראה מאחוריו בטשטוש קל. */
+.magazine-dialog[open] {
+  animation: magazine-in 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.magazine-dialog::backdrop {
+  background: rgba(12, 32, 44, 0.18);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: magazine-fade 0.4s ease-out both;
+}
+@keyframes magazine-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes magazine-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .magazine-dialog[open],
+  .magazine-dialog::backdrop { animation: none; }
 }

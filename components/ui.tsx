@@ -212,7 +212,11 @@ export function Chapter({
     <section id={id} className={`relative overflow-hidden ${className}`} style={style}>
       {image && (
         <>
-          <Image src={image} alt="" fill sizes="100vw" className={`-z-20 ${imageClassName}`} />
+          {/* Wrapper: keeps the fill image's parent positioned when the chapter
+              becomes sticky (ScrollMotion) and clips the parallax overscan. */}
+          <div aria-hidden className="absolute inset-0 -z-20 overflow-hidden">
+            <Image data-parallax src={image} alt="" fill sizes="100vw" className={imageClassName} />
+          </div>
           <div aria-hidden className="absolute inset-0 -z-10" style={{ background: imageOverlay }} />
         </>
       )}

@@ -1,4 +1,7 @@
+import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
+import { CONSENT_CHANNELS, CONSENT_SOURCE, CONSENT_VERSION } from "@/lib/consent";
+import { consentRows, signLeadId, utcStamp } from "@/lib/leadBackend";
 
 // ── יעד הלידים: Google Sheet בדרייב של FLY + מייל התראה, דרך Apps Script Web App ──
 // הקוד של הסקריפט: google-apps-script/Code.gs. כתובת ה-/exec של הפריסה (הרשאה: Anyone).
@@ -76,6 +79,7 @@ async function sendToSheet(fields: Record<string, string>) {
     }
     if (!body.ok) return { ok: false, error: `sheet: ${body.error ?? "unknown"}` };
     if (body.mail === false) console.warn("[lead] stored in sheet but email failed");
+    if ((body as { log?: boolean }).log === false) console.error("[lead] stored, but consent log row NOT written — check the הסכמות tab");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: `sheet fetch failed: ${(e as Error).message}` };
@@ -102,7 +106,7 @@ async function sendLeadEmail(f: Record<string, string>) {
     ],
     ["אימייל", f.email ? `<a href="mailto:${esc(f.email)}">${esc(f.email)}</a>` : "—"],
     ["מקור", esc(source)],
-    ["הסכמה לדיוור", esc(f.marketing_consent || "—")],
+    ...consentRows(f),
     ["עמוד", esc(f.page || "—")],
   ];
   const html =
@@ -131,6 +135,7 @@ async function sendLeadEmail(f: Record<string, string>) {
         subject: `ליד חדש ${SOURCE_LABEL}: ${f.name}${f.phone ? ` · ${f.phone}` : ""}`,
         html,
       }),
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return { ok: false, error: `resend ${res.status}: ${(await res.text()).slice(0, 300)}` };
     return { ok: true };
@@ -149,12 +154,13 @@ export async function POST(request: NextRequest) {
 
   // Honeypot — בוט מילא שדה נסתר. מחזירים הצלחה שקטה ולא שומרים.
   if (data.company && data.company.trim() !== "") {
+    console.warn("[lead] honeypot filled — not stored");
     return Response.json({ ok: true });
   }
 
-  const name = (data.name ?? "").trim();
-  const phone = (data.phone ?? "").trim();
-  const email = (data.email ?? "").trim();
+  const name = String(data.name ?? "").trim().slice(0, 200);
+  const phone = String(data.phone ?? "").trim().slice(0, 40);
+  const email = String(data.email ?? "").trim().slice(0, 320);
 
   const fieldErrors: Record<string, string> = {};
   if (!name) fieldErrors.name = "נא למלא שם מלא";
@@ -172,9 +178,11 @@ export async function POST(request: NextRequest) {
   if (now - prev < RATE_LIMIT_MS) {
     return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }
-  lastSeen.set(ip, now);
+  // נרשם רק אחרי שהליד נשמר (למטה) — כך ניסיון חוזר אחרי כשל אחסון לא ייחסם.
 
+  // הסכמה נרשמת רק מסימון פעיל בתיבה (true בוליאני) — כל ערך אחר = אין הסכמה.
   const marketingConsent = data.marketingConsent === true;
+  const leadId = randomUUID();
   const consentAt = new Date().toISOString();
   const userAgent = request.headers.get("user-agent") ?? "";
   const clip = (v: string | undefined, n: number) => (v ?? "").slice(0, n);
@@ -218,6 +226,13 @@ export async function POST(request: NextRequest) {
     last_utm_medium: lastUtmMedium,
     last_utm_campaign: lastUtmCampaign,
     marketing_consent: marketingConsent ? "כן" : "לא",
+    // ארבעה שדות חדשים בסוף השורה (מקור / מועד UTC / גרסה / מזהה ליד).
+    // ערוצים — ליומן ההסכמות בלבד.
+    consent_source: marketingConsent ? CONSENT_SOURCE.form : "",
+    consent_at_utc: marketingConsent ? utcStamp() : "",
+    consent_version: marketingConsent ? CONSENT_VERSION : "",
+    consent_channels: marketingConsent ? CONSENT_CHANNELS : "",
+    lead_id: leadId,
     consent_at: consentAt,
     ip,
     user_agent: userAgent,
@@ -234,11 +249,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  lastSeen.set(ip, Date.now());
+
   // הליד כבר שמור — המייל הוא תוספת. כשל נרשם בלוג בלבד.
   const mail = await sendLeadEmail(sheetFields);
   if (!mail.ok) console.warn("[lead] stored, but notification email not sent", mail);
 
-  return Response.json({ ok: true });
+  // מזהה הליד + אסימון חתום — מאפשרים לחלון המגזין לרשום הסכמה לליד הזה בלבד.
+  return Response.json({ ok: true, leadId, consentToken: signLeadId(leadId, SHEETS_SECRET) });
 }
 
 export function GET() {

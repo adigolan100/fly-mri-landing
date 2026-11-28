@@ -4,6 +4,7 @@ import Hero from "@/components/sections/Hero";
 import Knowledge from "@/components/sections/Knowledge";
 import Care from "@/components/sections/Care";
 import CTAForm from "@/components/sections/CTAForm";
+import ScrollMotion from "@/components/ScrollMotion";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
         <CTAForm />
       </main>
       <Footer />
+      <ScrollMotion />
     </>
   );
 }

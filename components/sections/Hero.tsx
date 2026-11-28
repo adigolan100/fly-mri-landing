@@ -9,14 +9,19 @@ export default function Hero() {
   const c = copy.hero;
   return (
     <section className="relative overflow-hidden min-h-[560px] sm:min-h-[680px] flex items-end sm:items-center">
-      <Image
-        src="/images/hero-life.png"
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-[30%_18%] sm:object-[center_30%] -z-20"
-      />
+      {/* Wrapper keeps the fill image's parent `absolute` even when the section
+          becomes sticky (ScrollMotion), and clips the parallax overscan. */}
+      <div aria-hidden className="absolute inset-0 -z-20 overflow-hidden">
+        <Image
+          data-parallax
+          src="/images/hero-life.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[30%_18%] sm:object-[center_30%]"
+        />
+      </div>
       <div
         aria-hidden
         className="absolute inset-0 -z-10"
