@@ -71,8 +71,8 @@ function Bidi({ text }: { text: string }) {
 
 type MagazineTicket = { leadId: string; token: string };
 
-/** בעמוד השארת הפרטים: שורת כותרת אחת (h1) במקום "מוכנים לדעת יותר?" + שורת ההסבר. */
-export default function CTAForm({ pageHeadline }: { pageHeadline?: string } = {}) {
+/** flow: בעמוד השארת הפרטים — הטופס צמוד לפרק הפתיחה שמעליו (פחות ריווח עליון), כך ששתי השכבות נקראות כרצף אחד. */
+export default function CTAForm({ flow = false }: { flow?: boolean } = {}) {
   const c = copy.ctaForm;
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -255,8 +255,8 @@ export default function CTAForm({ pageHeadline }: { pageHeadline?: string } = {}
     <Chapter
       id="consult"
       bg="dark"
-      curveTop={!pageHeadline}
-      className={`${pageHeadline ? "pt-12 pb-20 sm:pt-16 sm:pb-24" : "py-24 sm:py-28"} text-white [overflow-anchor:none]`}
+      curveTop
+      className={`${flow ? "pt-16 pb-20 sm:pt-20 sm:pb-24" : "py-24 sm:py-28"} text-white [overflow-anchor:none]`}
     >
       <FocusCircle size={280} top="-10%" left="-8%" filled color="45,127,249" />
       <FocusCircle size={200} bottom="-5%" right="-3%" />
@@ -272,11 +272,6 @@ export default function CTAForm({ pageHeadline }: { pageHeadline?: string } = {}
             <p className="text-lg opacity-90 leading-relaxed">{c.successBody}</p>
           </div>
         ) : (
-        pageHeadline ? (
-          <h1 className="font-heading font-semibold text-2xl sm:text-3xl text-center leading-snug [text-wrap:balance] lg:relative lg:right-1/2 lg:w-max lg:translate-x-1/2 lg:whitespace-nowrap">
-            {pageHeadline}
-          </h1>
-        ) : (
         <Reveal>
           <p className="font-latin text-sm font-semibold text-center mb-3" style={{ color: "#DCEEFF" }}>
             {c.headline}
@@ -285,7 +280,6 @@ export default function CTAForm({ pageHeadline }: { pageHeadline?: string } = {}
             {c.formIntro}
           </h2>
         </Reveal>
-        )
         )}
 
         <Reveal>
