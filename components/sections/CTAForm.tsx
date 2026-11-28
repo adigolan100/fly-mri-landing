@@ -71,7 +71,8 @@ function Bidi({ text }: { text: string }) {
 
 type MagazineTicket = { leadId: string; token: string };
 
-export default function CTAForm() {
+/** בעמוד השארת הפרטים: שורת כותרת אחת (h1) במקום "מוכנים לדעת יותר?" + שורת ההסבר. */
+export default function CTAForm({ pageHeadline }: { pageHeadline?: string } = {}) {
   const c = copy.ctaForm;
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -251,7 +252,12 @@ export default function CTAForm() {
   return (
     // overflow-anchor: none — כשהודעות שגיאה מופיעות, הדפדפן לא "מתקן" את
     // הגלילה ומקפיץ את השדה הראשון אל מעל המסך.
-    <Chapter id="consult" bg="dark" curveTop className="py-24 sm:py-28 text-white [overflow-anchor:none]">
+    <Chapter
+      id="consult"
+      bg="dark"
+      curveTop={!pageHeadline}
+      className={`${pageHeadline ? "pt-12 pb-20 sm:pt-16 sm:pb-24" : "py-24 sm:py-28"} text-white [overflow-anchor:none]`}
+    >
       <FocusCircle size={280} top="-10%" left="-8%" filled color="45,127,249" />
       <FocusCircle size={200} bottom="-5%" right="-3%" />
       <FocusCircle size={90} top="12%" right="12%" className="hidden sm:block" />
@@ -266,6 +272,11 @@ export default function CTAForm() {
             <p className="text-lg opacity-90 leading-relaxed">{c.successBody}</p>
           </div>
         ) : (
+        pageHeadline ? (
+          <h1 className="font-heading font-semibold text-2xl sm:text-3xl text-center leading-snug [text-wrap:balance] lg:relative lg:right-1/2 lg:w-max lg:translate-x-1/2 lg:whitespace-nowrap">
+            {pageHeadline}
+          </h1>
+        ) : (
         <Reveal>
           <p className="font-latin text-sm font-semibold text-center mb-3" style={{ color: "#DCEEFF" }}>
             {c.headline}
@@ -274,11 +285,12 @@ export default function CTAForm() {
             {c.formIntro}
           </h2>
         </Reveal>
+        )
         )}
 
         <Reveal>
           {submitted ? null : (
-            <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-3.5">
               {submitError && (
                 <p
                   ref={errorRef}
@@ -306,8 +318,8 @@ export default function CTAForm() {
               </div>
 
               <div>
-                <label htmlFor="name" className="block text-sm mb-1.5 opacity-90">
-                  שם <span className="opacity-70">(חובה)</span>
+                <label htmlFor="name" className="block text-sm mb-1 opacity-90">
+                  שם <span aria-hidden="true" style={{ color: "#FF8A80" }}>*</span>
                 </label>
                 <input
                   id="name"
@@ -317,7 +329,7 @@ export default function CTAForm() {
                   onChange={(e) => setName(e.target.value)}
                   aria-invalid={errors.name ? true : undefined}
                   aria-describedby={errors.name ? "name-error" : undefined}
-                  className="w-full rounded-xl px-4 py-3.5 text-base text-text bg-white/95 outline-none focus:ring-2 focus:ring-cta"
+                  className="w-full rounded-lg px-3.5 py-2.5 text-base text-text bg-white/95 outline-none focus:ring-2 focus:ring-cta"
                   dir="rtl"
                 />
                 {errors.name && (
@@ -327,8 +339,8 @@ export default function CTAForm() {
                 )}
               </div>
               <div>
-                <label htmlFor="phone" className="block text-sm mb-1.5 opacity-90">
-                  טלפון <span className="opacity-70">(חובה)</span>
+                <label htmlFor="phone" className="block text-sm mb-1 opacity-90">
+                  טלפון <span aria-hidden="true" style={{ color: "#FF8A80" }}>*</span>
                 </label>
                 <input
                   id="phone"
@@ -340,7 +352,7 @@ export default function CTAForm() {
                   onChange={(e) => setPhone(e.target.value)}
                   aria-invalid={errors.phone ? true : undefined}
                   aria-describedby={errors.phone ? "phone-error" : undefined}
-                  className="w-full rounded-xl px-4 py-3.5 text-base text-text bg-white/95 outline-none focus:ring-2 focus:ring-cta"
+                  className="w-full rounded-lg px-3.5 py-2.5 text-base text-text bg-white/95 outline-none focus:ring-2 focus:ring-cta"
                   dir="ltr"
                   style={{ textAlign: "right" }}
                 />
@@ -351,8 +363,8 @@ export default function CTAForm() {
                 )}
               </div>
               <div>
-                <label htmlFor="email" className="block text-sm mb-1.5 opacity-90">
-                  אימייל <span className="opacity-70">(חובה)</span>
+                <label htmlFor="email" className="block text-sm mb-1 opacity-90">
+                  אימייל <span aria-hidden="true" style={{ color: "#FF8A80" }}>*</span>
                 </label>
                 <input
                   id="email"
@@ -364,7 +376,7 @@ export default function CTAForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   aria-invalid={errors.email ? true : undefined}
                   aria-describedby={errors.email ? "email-error" : undefined}
-                  className="w-full rounded-xl px-4 py-3.5 text-base text-text bg-white/95 outline-none focus:ring-2 focus:ring-cta"
+                  className="w-full rounded-lg px-3.5 py-2.5 text-base text-text bg-white/95 outline-none focus:ring-2 focus:ring-cta"
                   dir="ltr"
                   style={{ textAlign: "right" }}
                 />
@@ -375,14 +387,14 @@ export default function CTAForm() {
                 )}
               </div>
               <div>
-                <label htmlFor="preferred-time" className="block text-sm mb-1.5 opacity-90">
-                  מועד נוח לשיחה <span className="opacity-70">(רשות)</span>
+                <label htmlFor="preferred-time" className="block text-sm mb-1 opacity-90">
+                  מועד נוח לשיחה
                 </label>
                 <select
                   id="preferred-time"
                   value={preferredTime}
                   onChange={(e) => setPreferredTime(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3.5 text-base text-text bg-white/95 outline-none focus:ring-2 focus:ring-cta"
+                  className="w-full rounded-lg px-3.5 py-2.5 text-base text-text bg-white/95 outline-none focus:ring-2 focus:ring-cta"
                   dir="rtl"
                 >
                   <option value="">לא משנה</option>
@@ -413,7 +425,7 @@ export default function CTAForm() {
                 type="submit"
                 disabled={submitting}
                 aria-busy={submitting}
-                className="w-full rounded-xl font-bold text-lg px-8 py-4 mt-2 disabled:opacity-70"
+                className="w-full rounded-lg font-bold text-base px-6 py-3 mt-1 disabled:opacity-70"
                 style={{
                   background: "var(--cta)",
                   color: "var(--text)",
