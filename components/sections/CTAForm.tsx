@@ -2,7 +2,7 @@
 
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
 import { copy } from "@/lib/copy";
-import { FORM_CONSENT_TEXT, MAGAZINE } from "@/lib/consent";
+import { FORM_CONSENT_TEXT, MAGAZINE, TITLE_KEEP_TOGETHER } from "@/lib/consent";
 import { getAttribution, trackLead } from "@/lib/tracking";
 import { Chapter, Container, FocusCircle, Reveal } from "../ui";
 
@@ -26,6 +26,24 @@ function ContactLinks({ text }: { text: string }) {
           >
             {part}
           </a>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  );
+}
+
+// כותרת החלון: "הארכת החיים" / "הרפואה המונעת" לא נשברים בין שתי מילים.
+function KeepTogether({ text }: { text: string }) {
+  const re = new RegExp(`(${TITLE_KEEP_TOGETHER.join("|")})`);
+  return (
+    <>
+      {text.split(re).map((part, i) =>
+        i % 2 ? (
+          <span key={i} className="whitespace-nowrap">
+            {part}
+          </span>
         ) : (
           part
         ),
@@ -190,7 +208,7 @@ export default function CTAForm() {
     setMagOpen(false);
   }
 
-  // "כן, שלחו לי" — הדרך היחידה לרשום הסכמה מהחלון.
+  // "כן, עדכנו אותי" — הדרך היחידה לרשום הסכמה מהחלון.
   const YES_GUARD_MS = 700;
   async function acceptMagazine(e: MouseEvent) {
     if (!ticket || magSaving) return;
@@ -447,7 +465,7 @@ export default function CTAForm() {
             tabIndex={-1}
             className="font-heading mt-3 text-lg font-semibold leading-snug outline-none [text-wrap:balance]"
           >
-            {MAGAZINE.title(firstName)}
+            <KeepTogether text={MAGAZINE.title(firstName)} />
           </h3>
           <div id="magazine-body">
             <p data-mag="body" className="mt-2 text-[0.95rem] leading-relaxed">

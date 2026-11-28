@@ -3,7 +3,7 @@ import { CONSENT_CHANNELS, CONSENT_SOURCE, CONSENT_VERSION } from "@/lib/consent
 import { consentRows, esc, postToSheet, rowsHtml, utcStamp, verifyLeadToken } from "@/lib/leadBackend";
 
 // ── רישום הסכמה לדיוור מחלון המגזין ──
-// נקרא רק מלחיצה על "כן, שלחו לי", אחרי שבקשת הייעוץ כבר נשמרה. מעדכן את שורת הליד
+// נקרא רק מלחיצה על "כן, עדכנו אותי", אחרי שבקשת הייעוץ כבר נשמרה. מעדכן את שורת הליד
 // בגיליון (לפי מזהה הליד), מוסיף שורה ליומן ההסכמות, ושולח מייל עדכון קצר.
 // "לא תודה" / X / Escape / לחיצה מחוץ לחלון לא קוראים לכאן בכלל.
 
@@ -23,7 +23,7 @@ async function sendConsentEmail(f: Record<string, string>) {
   if (!RESEND_API_KEY) return { ok: false, skipped: true };
   const html =
     `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px">` +
-    `<h2 style="margin:0 0 12px">עדכון: ${esc(f.name || "ליד")} אישר/ה קבלת מגזין</h2>` +
+    `<h2 style="margin:0 0 12px">עדכון: ${esc(f.name || "ליד")} אישר/ה קבלת עדכונים</h2>` +
     rowsHtml([
       ["שם", esc(f.name || "—")],
       ["טלפון", esc(f.phone || "—")],
@@ -41,7 +41,7 @@ async function sendConsentEmail(f: Record<string, string>) {
       body: JSON.stringify({
         from: LEAD_NOTIFY_FROM,
         to: LEAD_NOTIFY_TO,
-        subject: `עדכון: ${f.name || "ליד"} אישר/ה קבלת מגזין`,
+        subject: `עדכון: ${f.name || "ליד"} אישר/ה קבלת עדכונים`,
         html,
       }),
       signal: AbortSignal.timeout(8000),
