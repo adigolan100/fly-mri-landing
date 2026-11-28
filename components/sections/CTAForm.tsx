@@ -79,7 +79,10 @@ export default function CTAForm() {
         document.body.style.overflow = prev;
       };
     }
-    if (!magOpen && d.open) d.close();
+    if (!magOpen && d.hasAttribute("open")) {
+      if (typeof d.close === "function") d.close();
+      else d.removeAttribute("open");
+    }
   }, [magOpen]);
 
   function computeErrors(): FieldErrors {
@@ -161,6 +164,7 @@ export default function CTAForm() {
 
   // "לא תודה" / X / Escape / לחיצה מחוץ לחלון — סוגרים. שום דבר לא נשלח.
   function declineMagazine() {
+    if (magSaving) return; // "כן" כבר בשליחה — מחכים לתשובה
     setMagOpen(false);
   }
 
@@ -185,9 +189,9 @@ export default function CTAForm() {
         setMagOpen(false);
         return;
       }
-      setMagError("לא הצלחנו לשמור. אפשר לנסות שוב.");
+      setMagError("ייתכן שהבחירה לא נשמרה. אפשר לנסות שוב.");
     } catch {
-      setMagError("לא הצלחנו לשמור. בדקו את החיבור לאינטרנט ונסו שוב.");
+      setMagError("ייתכן שהבחירה לא נשמרה. בדקו את החיבור לאינטרנט ונסו שוב.");
     } finally {
       setMagSaving(false);
     }
@@ -374,6 +378,9 @@ export default function CTAForm() {
         aria-describedby="magazine-body"
         // Escape סוגר את החלון (התנהגות הדפדפן) — מסנכרנים את המצב. לא נשלח דבר.
         onClose={() => setMagOpen(false)}
+        onCancel={(e) => {
+          if (magSaving) e.preventDefault();
+        }}
         // לחיצה על הרקע (מחוץ לתוכן) = "לא תודה" — רק אם גם הלחיצה התחילה מחוץ לחלון
         // (גרירת סימון טקסט החוצה או לחיצה על פס הגלילה לא נחשבות).
         onPointerDown={(e) => {
@@ -394,6 +401,7 @@ export default function CTAForm() {
           <button
             type="button"
             onClick={declineMagazine}
+            disabled={magSaving}
             aria-label={MAGAZINE.close}
             className="absolute end-1 top-1 inline-flex h-11 w-11 items-center justify-center rounded-full"
             style={{ color: "var(--text-secondary)" }}
@@ -456,6 +464,7 @@ export default function CTAForm() {
             type="button"
             data-mag="no"
             onClick={declineMagazine}
+            disabled={magSaving}
             className="mt-1 flex min-h-11 w-full items-center justify-center text-sm underline underline-offset-4"
             style={{ color: "var(--text-secondary)" }}
           >

@@ -260,6 +260,7 @@ export default function ScrollMotion() {
       const el = e.target;
       if (!(el instanceof HTMLElement) || el === main || el.matches(PANEL_SELECTOR)) return;
       if (!el.closest("[data-stack-panel]")) return;
+      if (el.closest("dialog[open]")) return; // פוקוס בתוך חלון פתוח — לא לגלול את העמוד מאחור
       if (performance.now() - pointerAt < 800) return;
       let visible = false;
       try {

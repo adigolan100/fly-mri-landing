@@ -222,3 +222,6 @@ textarea:focus-visible,
   .magazine-dialog[open],
   .magazine-dialog::backdrop { animation: none; }
 }
+
+/* דפדפן ישן בלי תמיכה ב-<dialog>: חלון סגור לא מוצג */
+dialog:not([open]){display:none}

@@ -92,7 +92,7 @@ function esc(s: string): string {
   );
 }
 
-async function sendLeadEmail(f: Record<string, string>) {
+async function sendLeadEmail(f: Record<string, string>, notStored = false) {
   if (!RESEND_API_KEY) return { ok: false, skipped: true };
   const intlPhone = f.phone.replace(/\D/g, "").replace(/^0/, "972");
   const source =
@@ -112,6 +112,9 @@ async function sendLeadEmail(f: Record<string, string>) {
   const html =
     `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px">` +
     `<h2 style="margin:0 0 12px">ליד חדש ${SOURCE_LABEL}</h2>` +
+    (notStored
+      ? `<p style="margin:0 0 12px;color:#B3261E;font-weight:bold">⚠️ הליד לא נשמר בגיליון (תקלה בגוגל). יש להעתיק אותו ידנית.</p>`
+      : "") +
     `<table style="border-collapse:collapse">` +
     rows
       .map(
@@ -132,7 +135,7 @@ async function sendLeadEmail(f: Record<string, string>) {
         from: LEAD_NOTIFY_FROM,
         to: LEAD_NOTIFY_TO,
         reply_to: f.email || undefined,
-        subject: `ליד חדש ${SOURCE_LABEL}: ${f.name}${f.phone ? ` · ${f.phone}` : ""}`,
+        subject: `${notStored ? "⚠️ לא נשמר בגיליון — " : ""}ליד חדש ${SOURCE_LABEL}: ${f.name}${f.phone ? ` · ${f.phone}` : ""}`,
         html,
       }),
       signal: AbortSignal.timeout(8000),
@@ -153,7 +156,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Honeypot — בוט מילא שדה נסתר. מחזירים הצלחה שקטה ולא שומרים.
-  if (data.company && data.company.trim() !== "") {
+  if (String(data.company ?? "").trim() !== "") {
     console.warn("[lead] honeypot filled — not stored");
     return Response.json({ ok: true });
   }
@@ -185,7 +188,7 @@ export async function POST(request: NextRequest) {
   const leadId = randomUUID();
   const consentAt = new Date().toISOString();
   const userAgent = request.headers.get("user-agent") ?? "";
-  const clip = (v: string | undefined, n: number) => (v ?? "").slice(0, n);
+  const clip = (v: unknown, n: number) => (typeof v === "string" ? v : "").slice(0, n);
   const page = clip(data.page, 500);
   const landingPage = clip(data.landingPage, 500);
   const referrer = clip(data.referrer, 500);
@@ -243,6 +246,11 @@ export async function POST(request: NextRequest) {
   if (!sheet.ok) {
     // הליד לא נשמר — מחזירים שגיאה אמיתית כדי שהטופס יציג הודעת כשל.
     console.error("[lead] not stored", sheet);
+    // שלא ילך לאיבוד: המייל נשלח בכל זאת, מסומן "לא נשמר בגיליון".
+    if (!sheet.skipped) {
+      const mail = await sendLeadEmail(sheetFields, true);
+      if (!mail.ok) console.error("[lead] NOT stored and email failed too", mail);
+    }
     return Response.json(
       { ok: false, error: sheet.skipped ? "backend_not_configured" : "storage_failed" },
       { status: 502 },
