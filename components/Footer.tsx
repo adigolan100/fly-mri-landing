@@ -32,11 +32,11 @@ export default function Footer() {
               {l.label}
             </Link>
           ))}
-          <CookieSettingsLink className="text-xs font-semibold text-text-secondary hover:text-accent underline underline-offset-2" />
+          <CookieSettingsLink className="inline-flex min-h-11 items-center text-xs font-semibold text-text-secondary hover:text-accent underline underline-offset-2" />
         </nav>
 
         <p className="text-xs text-text-secondary mt-6">
-          פליי אם אר איי בע&quot;מ · ח.פ. 515702637 · © {new Date().getFullYear()} Fly MRI
+          פליי אם אר איי בע&quot;מ · ח.פ. 515702637 · <bdi className="whitespace-nowrap">© {new Date().getFullYear()} Fly MRI</bdi>
         </p>
       </div>
     </footer>

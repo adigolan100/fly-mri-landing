@@ -225,3 +225,10 @@ textarea:focus-visible,
 
 /* דפדפן ישן בלי תמיכה ב-<dialog>: חלון סגור לא מוצג */
 dialog:not([open]){display:none}
+
+/* אנימציה בלולאה נעצרת אחרי 5 שניות במסך (WCAG 2.2.2) — ScrollMotion מוסיף את המחלקה */
+.loops-done,
+.loops-done::before,
+.loops-done::after {
+  animation-play-state: paused !important;
+}

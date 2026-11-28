@@ -30,6 +30,8 @@ export default function Hero() {
             "linear-gradient(to top, rgba(17,43,60,0.92) 0%, rgba(17,43,60,0.75) 35%, rgba(17,43,60,0.35) 65%, rgba(17,43,60,0.12) 100%)",
         }}
       />
+      {/* Mobile: the copy sits over the photo — extra even scrim keeps it at 4.5:1 (WCAG 1.4.3). */}
+      <div aria-hidden className="absolute inset-0 -z-10 sm:hidden" style={{ background: "rgba(17,43,60,0.5)" }} />
       <div
         aria-hidden
         className="absolute inset-0 -z-10 hidden sm:block"
@@ -51,8 +53,8 @@ export default function Hero() {
           /* scrim-independent legibility guarantee for text over the photo (WCAG 1.4.3) */
           style={{ textShadow: "0 1px 10px rgba(17,43,60,0.55)" }}
         >
-          <motion.p variants={fadeUp} lang="en" className="font-latin text-sm sm:text-base font-semibold mb-4 sm:mb-6" style={{ color: "#8FC1FF" }}>
-            {c.eyebrow}
+          <motion.p variants={fadeUp} lang="en" className="font-latin text-sm sm:text-base font-semibold mb-4 sm:mb-6" style={{ color: "#DCEEFF" }}>
+            <bdi dir="ltr">{c.eyebrow}</bdi>
           </motion.p>
 
           <motion.h1

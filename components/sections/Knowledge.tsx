@@ -42,6 +42,8 @@ export default function Knowledge() {
       <Chapter
         bg="clinical"
         image="/images/clinical-suite.png"
+        // Text runs across the bright room photo — a near-solid scrim keeps it readable (WCAG 1.4.3).
+        imageOverlay="linear-gradient(to left, rgba(17,43,60,0.93) 0%, rgba(17,43,60,0.86) 60%, rgba(17,43,60,0.78) 100%)"
         imageClassName="object-cover object-[38%_center] sm:object-[center]"
         className="flex items-center min-h-[560px] sm:min-h-[720px] pt-16 pb-20 sm:pt-20 sm:pb-24"
       >

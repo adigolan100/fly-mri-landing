@@ -259,9 +259,20 @@ export default function ScrollMotion() {
     const onFocusIn = (e: FocusEvent) => {
       const el = e.target;
       if (!(el instanceof HTMLElement) || el === main || el.matches(PANEL_SELECTOR)) return;
-      if (!el.closest("[data-stack-panel]")) return;
       if (el.closest("dialog[open]")) return; // פוקוס בתוך חלון פתוח — לא לגלול את העמוד מאחור
       if (performance.now() - pointerAt < 800) return;
+      // מחוץ לפרקים (עמודים משפטיים, קישור הדילוג, הפוטר): Lenis חוסם את הגלילה הטבעית
+      // של הדפדפן אל הפוקוס — גוללים בעצמנו אם האלמנט מחוץ למסך (WCAG 2.4.7).
+      if (!el.closest("[data-stack-panel]")) {
+        if (el.closest("#skip-link, .skip-link") || getComputedStyle(el).position === "fixed") return;
+        requestAnimationFrame(() => {
+          const r = el.getBoundingClientRect();
+          if (r.top < headerH || r.bottom > window.innerHeight - bottomObstruction()) {
+            scrollToY(window.scrollY + r.top - (window.innerHeight - r.height) / 2, false);
+          }
+        });
+        return;
+      }
       let visible = false;
       try {
         visible = el.matches(":focus-visible");
@@ -275,6 +286,22 @@ export default function ScrollMotion() {
     };
     document.addEventListener("focusin", onFocusIn);
     cleanups.push(() => document.removeEventListener("focusin", onFocusIn));
+
+    // ── אנימציות בלולאה (WCAG 2.2.2): נעצרות 5 שניות אחרי שהן נראות במסך ──────
+    const LOOPS = ".scan-figure__float, .scan-figure__reveal, .scan-figure__plane, .journey-rail, .sb-slice, .sb-spin-slow, .sb-orbit, .sb-breathe, .sb-tunnel, .scanner-bore__dot, .scan-cue";
+    const loopTimers: number[] = [];
+    const loopIo = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        loopIo.unobserve(e.target);
+        loopTimers.push(window.setTimeout(() => e.target.classList.add("loops-done"), 5000));
+      }
+    });
+    document.querySelectorAll(LOOPS).forEach((el) => loopIo.observe(el));
+    cleanups.push(() => {
+      loopIo.disconnect();
+      loopTimers.forEach((t) => clearTimeout(t));
+    });
 
     // ── קישורי עוגן באותו עמוד: למיקום הטבעי, מתחת ל-header ─────────────────
     const onClick = (e: MouseEvent) => {

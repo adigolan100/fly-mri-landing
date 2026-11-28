@@ -110,7 +110,7 @@ export default function ConsentBanner() {
           <button
             type="button"
             onClick={() => decide(false)}
-            className="rounded-full px-4 py-2.5 text-sm font-semibold"
+            className="min-h-11 rounded-full px-4 py-2.5 text-sm font-semibold"
             style={{ border: "1.5px solid rgba(17,43,60,0.25)", color: "var(--text)" }}
           >
             דחייה
@@ -119,7 +119,7 @@ export default function ConsentBanner() {
             ref={acceptRef}
             type="button"
             onClick={() => decide(true)}
-            className="rounded-full px-5 py-2.5 text-sm font-bold"
+            className="min-h-11 rounded-full px-5 py-2.5 text-sm font-bold"
             style={{ background: "var(--cta)", color: "var(--text)" }}
           >
             אישור

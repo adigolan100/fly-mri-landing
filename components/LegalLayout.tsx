@@ -1,5 +1,5 @@
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -20,6 +20,8 @@ export default function LegalLayout({ markdown }: { markdown: string }) {
           <article className="legal-doc">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
+              // tel: לחיץ (ברירת המחדל של react-markdown מוחקת קישורי tel:)
+              urlTransform={(u) => (u.startsWith("tel:") ? u : defaultUrlTransform(u))}
               components={{
                 // GFM tables only ever produce column headers — mark them so
                 // screen readers announce the header for each data cell.
