@@ -1,4 +1,5 @@
 "use client";
+import { DISCLAIMER_CTA } from "@/lib/disclaimers";
 
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -79,6 +80,9 @@ export default function Hero() {
           <motion.div variants={fadeUp}>
             <CTAButton text={c.ctaText} />
           </motion.div>
+          <motion.p variants={fadeUp} className="mt-4 text-sm" style={{ color: "rgba(255,255,255,0.9)" }}>
+            {DISCLAIMER_CTA}
+          </motion.p>
         </motion.div>
       </div>
     </section>

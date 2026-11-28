@@ -2,11 +2,21 @@
 
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
 import { copy } from "@/lib/copy";
-import { FORM_CONSENT_TEXT, MAGAZINE, TITLE_KEEP_TOGETHER } from "@/lib/consent";
+import {
+  FORM_CONSENT_TEXT,
+  FORM_NOTICE_AFTER,
+  FORM_NOTICE_BEFORE,
+  FORM_NOTICE_LINK,
+  MAGAZINE,
+  PREFERRED_TIMES,
+  TITLE_KEEP_TOGETHER,
+} from "@/lib/consent";
+import { DISCLAIMER_CTA } from "@/lib/disclaimers";
 import { getAttribution, trackLead } from "@/lib/tracking";
 import { Chapter, Container, FocusCircle, Reveal } from "../ui";
 
 const PHONE_RE = /^0\d{1,2}-?\d{7}$/;
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FieldErrors = { name?: string; phone?: string; email?: string };
@@ -70,6 +80,7 @@ export default function CTAForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [preferredTime, setPreferredTime] = useState(""); // מועד נוח לשיחה — רשות
   const [company, setCompany] = useState(""); // honeypot
   const [marketing, setMarketing] = useState(false); // תיבת המגזין — לא מסומנת מראש
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -157,6 +168,7 @@ export default function CTAForm() {
           name: name.trim(),
           phone: phone.trim(),
           email: email.trim(),
+          preferredTime,
           marketingConsent: marketing === true,
           company, // honeypot
           ...getAttribution(),
@@ -296,7 +308,7 @@ export default function CTAForm() {
 
               <div>
                 <label htmlFor="name" className="block text-sm mb-1.5 opacity-90">
-                  שם מלא <span className="opacity-70">(חובה)</span>
+                  שם <span className="opacity-70">(חובה)</span>
                 </label>
                 <input
                   id="name"
@@ -363,6 +375,25 @@ export default function CTAForm() {
                   </p>
                 )}
               </div>
+              <div>
+                <label htmlFor="preferred-time" className="block text-sm mb-1.5 opacity-90">
+                  מועד נוח לשיחה <span className="opacity-70">(רשות)</span>
+                </label>
+                <select
+                  id="preferred-time"
+                  value={preferredTime}
+                  onChange={(e) => setPreferredTime(e.target.value)}
+                  className="w-full rounded-xl px-4 py-3.5 text-base text-text bg-white/95 outline-none focus:ring-2 focus:ring-cta"
+                  dir="rtl"
+                >
+                  <option value="">לא משנה</option>
+                  {PREFERRED_TIMES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
 
               <div className="flex items-start gap-2.5 pt-1">
@@ -393,20 +424,22 @@ export default function CTAForm() {
                 {submitting ? "שולח…" : c.ctaText}
               </button>
 
-              <p className="text-xs opacity-70 leading-relaxed">
-                בשליחת הטופס אני מאשר/ת ש-Fly MRI תיצור עמי קשר בנוגע לפנייה,{" "}
-                <a href="/privacy" className="underline underline-offset-2">
-                  בהתאם למדיניות הפרטיות
+              {/* "דיסקליימר ונוסחי טופס" v2 סעיף 5.2 — מילה במילה; הקישור נפתח בכרטיסייה חדשה. */}
+              <p className="text-sm leading-relaxed text-white/90">
+                {FORM_NOTICE_BEFORE}
+                <a href="/privacy" target="_blank" rel="noopener" className="underline underline-offset-2">
+                  {FORM_NOTICE_LINK}
                 </a>
-                .
+                {FORM_NOTICE_AFTER}
               </p>
             </form>
           )}
         </Reveal>
 
         <Reveal>
-          <p className="text-xs opacity-70 leading-relaxed mt-6 text-center max-w-md mx-auto">
-            {c.disclaimer}
+          {/* "דיסקליימר ונוסחי טופס" v2 סעיף 1.2 — שורה ליד כפתור הפעולה. */}
+          <p className="text-sm text-white/85 leading-relaxed mt-6 text-center max-w-md mx-auto">
+            {DISCLAIMER_CTA}
           </p>
         </Reveal>
       </Container>

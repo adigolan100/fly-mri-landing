@@ -1,9 +1,9 @@
 import type { NextRequest } from "next/server";
-import { CONSENT_CHANNELS, CONSENT_SOURCE, CONSENT_VERSION } from "@/lib/consent";
+import { CONSENT_CHANNELS, CONSENT_SOURCE, POPUP_CONSENT_VERSION } from "@/lib/consent";
 import { consentRows, esc, postToSheet, rowsHtml, utcStamp, verifyLeadToken } from "@/lib/leadBackend";
 
 // ── רישום הסכמה לדיוור מחלון המגזין ──
-// נקרא רק מלחיצה על "כן, עדכנו אותי", אחרי שבקשת הייעוץ כבר נשמרה. מעדכן את שורת הליד
+// נקרא רק מלחיצה על "כן, עדכנו אותי", אחרי שבקשת הפרטים כבר נשמרה. מעדכן את שורת הליד
 // בגיליון (לפי מזהה הליד), מוסיף שורה ליומן ההסכמות, ושולח מייל עדכון קצר.
 // "לא תודה" / X / Escape / לחיצה מחוץ לחלון לא קוראים לכאן בכלל.
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     marketing_consent: "כן",
     consent_source: CONSENT_SOURCE.popup,
     consent_at_utc: utcStamp(),
-    consent_version: CONSENT_VERSION,
+    consent_version: POPUP_CONSENT_VERSION,
     consent_channels: CONSENT_CHANNELS,
     page: typeof data.page === "string" ? data.page.slice(0, 500) : "",
   };

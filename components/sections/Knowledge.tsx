@@ -1,4 +1,5 @@
 import { copy } from "@/lib/copy";
+import { DISCLAIMER_CTA } from "@/lib/disclaimers";
 import { Chapter, ChapterMarker, Container, CTAButton, FocusCircle, Kicker, Reveal } from "../ui";
 
 export default function Knowledge() {
@@ -35,6 +36,9 @@ export default function Knowledge() {
           </ul>
 
           <CTAButton text={copy.hero.ctaText} />
+          <p className="mt-4 text-sm" style={{ color: "rgba(255,255,255,0.9)" }}>
+            {DISCLAIMER_CTA}
+          </p>
         </Container>
       </Chapter>
 

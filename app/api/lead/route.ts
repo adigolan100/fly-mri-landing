@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
-import { CONSENT_CHANNELS, CONSENT_SOURCE, CONSENT_VERSION } from "@/lib/consent";
+import { CONSENT_CHANNELS, CONSENT_SOURCE, CONSENT_VERSION, PREFERRED_TIMES, PRIVACY_VERSION } from "@/lib/consent";
 import { consentRows, signLeadId, utcStamp } from "@/lib/leadBackend";
 
 // ── יעד הלידים: Google Sheet בדרייב של FLY + מייל התראה, דרך Apps Script Web App ──
@@ -34,6 +34,7 @@ type Payload = {
   phone?: string;
   email?: string;
   marketingConsent?: boolean;
+  preferredTime?: string;
   page?: string;
   landingPage?: string;
   referrer?: string;
@@ -104,6 +105,7 @@ async function sendLeadEmail(f: Record<string, string>, notStored = false) {
       `<a href="tel:${esc(f.phone)}">${esc(f.phone)}</a>` +
         (intlPhone ? ` &nbsp;·&nbsp; <a href="https://wa.me/${intlPhone}">וואטסאפ</a>` : ""),
     ],
+    ["מועד נוח לשיחה", esc(f.preferred_time || "—")],
     ["אימייל", f.email ? `<a href="mailto:${esc(f.email)}">${esc(f.email)}</a>` : "—"],
     ["מקור", esc(source)],
     ...consentRows(f),
@@ -164,6 +166,9 @@ export async function POST(request: NextRequest) {
   const name = String(data.name ?? "").trim().slice(0, 200);
   const phone = String(data.phone ?? "").trim().slice(0, 40);
   const email = String(data.email ?? "").trim().slice(0, 320);
+  const preferredTime = (PREFERRED_TIMES as readonly string[]).includes(String(data.preferredTime ?? ""))
+    ? String(data.preferredTime)
+    : "";
 
   const fieldErrors: Record<string, string> = {};
   if (!name) fieldErrors.name = "נא למלא שם מלא";
@@ -229,6 +234,8 @@ export async function POST(request: NextRequest) {
     last_utm_medium: lastUtmMedium,
     last_utm_campaign: lastUtmCampaign,
     marketing_consent: marketingConsent ? "כן" : "לא",
+    preferred_time: preferredTime,
+    privacy_version: PRIVACY_VERSION,
     // ארבעה שדות חדשים בסוף השורה (מקור / מועד UTC / גרסה / מזהה ליד).
     // ערוצים — ליומן ההסכמות בלבד.
     consent_source: marketingConsent ? CONSENT_SOURCE.form : "",
