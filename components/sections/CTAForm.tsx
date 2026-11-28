@@ -12,6 +12,28 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type FieldErrors = { name?: string; phone?: string; email?: string };
 
 /** עוטף מילים לועזיות (Fly MRI, SMS) ב-<bdi> כדי שהפיסוק סביבן לא יקפוץ ב-RTL. */
+// טלפון ומייל בהודעת השגיאה — לחיצים (חיוג / מייל).
+function ContactLinks({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/(09-7747905|info@flymri\.com)/).map((part, i) =>
+        i % 2 ? (
+          <a
+            key={i}
+            href={part.includes("@") ? `mailto:${part}` : "tel:+97297747905"}
+            dir="ltr"
+            className="underline underline-offset-2"
+          >
+            {part}
+          </a>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  );
+}
+
 function Bidi({ text }: { text: string }) {
   return (
     <>
@@ -236,7 +258,7 @@ export default function CTAForm() {
                   className="rounded-xl px-4 py-3 text-sm font-semibold outline-none"
                   style={{ background: "rgba(255,180,160,0.15)", color: "#FFB4A0" }}
                 >
-                  {submitError}
+                  <ContactLinks text={submitError} />
                 </p>
               )}
 

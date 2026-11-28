@@ -39,8 +39,8 @@ export default function Hero() {
         }}
       />
 
-      {/* Focus Circle accent — echoes prenuvo's ring-on-subject touch, placed over the face */}
-      <FocusCircle size={130} top="12%" left="19%" color="255,255,255" className="hidden sm:block" />
+      {/* Focus Circle accent — in the open sky beside the head, not over the face (owner, 2026-11-28) */}
+      <FocusCircle size={130} top="9%" left="44%" color="255,255,255" className="hidden sm:block" />
 
       <div className="relative w-full mx-auto max-w-5xl px-6 pt-20 pb-10 sm:pt-36 sm:pb-24">
         <motion.div
