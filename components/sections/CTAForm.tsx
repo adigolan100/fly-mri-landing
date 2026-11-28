@@ -71,7 +71,10 @@ function Bidi({ text }: { text: string }) {
 
 type MagazineTicket = { leadId: string; token: string };
 
-export default function CTAForm() {
+/** בעמוד ייעודי (/consultation): הכותרת של העמוד והטופס באותו פרק — h1 מעל הטופס, בלי פרק כותרת נפרד. */
+type PageHeading = { title: string; body?: string };
+
+export default function CTAForm({ pageHeading }: { pageHeading?: PageHeading } = {}) {
   const c = copy.ctaForm;
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -251,7 +254,12 @@ export default function CTAForm() {
   return (
     // overflow-anchor: none — כשהודעות שגיאה מופיעות, הדפדפן לא "מתקן" את
     // הגלילה ומקפיץ את השדה הראשון אל מעל המסך.
-    <Chapter id="consult" bg="dark" curveTop className="py-24 sm:py-28 text-white [overflow-anchor:none]">
+    <Chapter
+      id="consult"
+      bg="dark"
+      curveTop={!pageHeading}
+      className={`${pageHeading ? "pt-12 pb-24 sm:pt-16 sm:pb-28" : "py-24 sm:py-28"} text-white [overflow-anchor:none]`}
+    >
       <FocusCircle size={280} top="-10%" left="-8%" filled color="45,127,249" />
       <FocusCircle size={200} bottom="-5%" right="-3%" />
       <FocusCircle size={90} top="12%" right="12%" className="hidden sm:block" />
@@ -266,6 +274,14 @@ export default function CTAForm() {
             <p className="text-lg opacity-90 leading-relaxed">{c.successBody}</p>
           </div>
         ) : (
+        pageHeading ? (
+          <div className="text-center">
+            <h1 className="font-heading font-bold text-3xl sm:text-4xl leading-tight mb-3 [text-wrap:balance]">
+              {pageHeading.title}
+            </h1>
+            {pageHeading.body && <p className="text-base sm:text-lg leading-relaxed text-white/90">{pageHeading.body}</p>}
+          </div>
+        ) : (
         <Reveal>
           <p className="font-latin text-sm font-semibold text-center mb-3" style={{ color: "#DCEEFF" }}>
             {c.headline}
@@ -274,6 +290,7 @@ export default function CTAForm() {
             {c.formIntro}
           </h2>
         </Reveal>
+        )
         )}
 
         <Reveal>
