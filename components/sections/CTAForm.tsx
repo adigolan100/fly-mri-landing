@@ -11,7 +11,6 @@ import {
   PREFERRED_TIMES,
   TITLE_KEEP_TOGETHER,
 } from "@/lib/consent";
-import { DISCLAIMER_CTA } from "@/lib/disclaimers";
 import { getAttribution, trackLead } from "@/lib/tracking";
 import { Chapter, Container, FocusCircle, Reveal } from "../ui";
 
@@ -436,12 +435,6 @@ export default function CTAForm() {
           )}
         </Reveal>
 
-        <Reveal>
-          {/* "דיסקליימר ונוסחי טופס" v2 סעיף 1.2 — שורה ליד כפתור הפעולה. */}
-          <p className="text-sm text-white/85 leading-relaxed mt-6 text-center max-w-md mx-auto">
-            {DISCLAIMER_CTA}
-          </p>
-        </Reveal>
       </Container>
 
       <dialog
